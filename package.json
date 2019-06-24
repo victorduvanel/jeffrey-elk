@@ -1,0 +1,22 @@
+{
+  "name": "build-index",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "babel-node index.js"
+  },
+  "dependencies": {
+    "@elastic/elasticsearch": "^7.1.0",
+    "bluebird": "^3.5.5",
+    "knex": "^0.17.6",
+    "lodash": "^4.17.11",
+    "pg": "^7.11.0",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4"
+  },
+  "devDependencies": {
+    "babel-cli": "^6.26.0",
+    "babel-preset-env": "^1.7.0"
+  }
+}

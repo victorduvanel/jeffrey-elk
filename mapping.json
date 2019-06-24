@@ -1,0 +1,153 @@
+{
+  "properties" : {
+    "bio" : {
+      "type" : "text",
+      "fields" : {
+        "keyword" : {
+          "type" : "keyword",
+          "ignore_above" : 256
+        }
+      }
+    },
+    "created_at" : {
+      "type" : "date"
+    },
+    "date_of_birth" : {
+      "type" : "date"
+    },
+    "first_name" : {
+      "type" : "text",
+      "fields" : {
+        "keyword" : {
+          "type" : "keyword",
+          "ignore_above" : 256
+        }
+      }
+    },
+    "is_available" : {
+      "type" : "boolean"
+    },
+    "is_provider" : {
+      "type" : "boolean"
+    },
+    "is_tester" : {
+      "type" : "boolean"
+    },
+    "last_activity_at" : {
+      "type" : "date"
+    },
+    "last_name" : {
+      "type" : "text",
+      "fields" : {
+        "keyword" : {
+          "type" : "keyword",
+          "ignore_above" : 256
+        }
+      }
+    },
+
+    "categories" : {
+      "type" : "keyword"
+    },
+
+    "locations" : {
+      "properties" : {
+        "location": {
+          "type": "geo_point"
+        },
+        "timestamp" : {
+          "type" : "date"
+        },
+        "description_locale" : {
+          "type" : "keyword"
+        },
+        "description" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
+        }
+      }
+    },
+    "missions" : {
+      "properties" : {
+        "canceled_by" : {
+          "type" : "keyword"
+        },
+        "category" : {
+          "type" : "keyword"
+        },
+        "created_at" : {
+          "type" : "date"
+        },
+        "ended_date" : {
+          "type" : "date"
+        },
+        "price" : {
+          "type" : "long"
+        },
+        "price_currency" : {
+          "type" : "keyword"
+        },
+
+        "location": {
+          "type": "geo_point"
+        },
+
+        "provider_location": {
+          "type": "geo_point"
+        },
+
+        "review" : {
+          "properties" : {
+            "created_at" : {
+              "type" : "date"
+            },
+            "message" : {
+              "type" : "text",
+              "fields" : {
+                "keyword" : {
+                  "type" : "keyword",
+                  "ignore_above" : 256
+                }
+              }
+            },
+            "rank" : {
+              "type" : "long"
+            },
+            "updated_at" : {
+              "type" : "date"
+            }
+          }
+        },
+        "start_date" : {
+          "type" : "date"
+        },
+        "started_date" : {
+          "type" : "date"
+        },
+        "status" : {
+          "type" : "keyword"
+        },
+        "type" : {
+          "type" : "keyword"
+        },
+        "updated_at" : {
+          "type" : "date"
+        }
+      }
+    },
+    "phone_number" : {
+      "type" : "keyword"
+    },
+    "profile_picture" : {
+      "type" : "keyword"
+    },
+    "updated_at" : {
+      "type" : "date"
+    }
+  }
+}
