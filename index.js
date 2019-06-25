@@ -51,21 +51,18 @@ const main = async () => {
       (row) => row.service_category_id
     );
 
-    doc.locations = await Promise.map(
-      knex
-        .select('*')
-        .from('user_locations')
-        .where('user_id', user.id),
-      (location) => ({
-        timestamp: location.timestamp,
-        description: location.description,
-        description_locale: location.description_locale,
-        location: {
-          lat: location.lat,
-          lon: location.lng
-        }
-      })
-    );
+    const locations = await knex('user_locations')
+      .where('user_id', user.id)
+      .whereRaw('(NOW()::timestamp - "timestamp"::timestamp) < \'10 days\'')
+      .orderBy('timestamp', 'desc')
+      .limit(1);
+
+    if (locations.length) {
+      doc.location = {
+        lat: locations[0].lat,
+        lon: locations[0].lng
+      };
+    }
 
     doc.missions = await Promise.map(
       knex

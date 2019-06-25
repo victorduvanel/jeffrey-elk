@@ -45,32 +45,11 @@
         }
       }
     },
-
     "categories" : {
       "type" : "keyword"
     },
-
-    "locations" : {
-      "properties" : {
-        "location": {
-          "type": "geo_point"
-        },
-        "timestamp" : {
-          "type" : "date"
-        },
-        "description_locale" : {
-          "type" : "keyword"
-        },
-        "description" : {
-          "type" : "text",
-          "fields" : {
-            "keyword" : {
-              "type" : "keyword",
-              "ignore_above" : 256
-            }
-          }
-        }
-      }
+    "location": {
+      "type": "geo_point"
     },
     "missions" : {
       "properties" : {
