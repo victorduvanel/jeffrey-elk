@@ -3,7 +3,7 @@ import Promise from "bluebird";
 import Knex from "knex";
 import { Client } from "@elastic/elasticsearch";
 
-const ES_INDEX = 'jeffrey-users';
+const ES_INDEX = 'jeffrey-providers';
 
 const esClient = new Client({
   node: 'http://reptilians.io:9200'
@@ -11,6 +11,14 @@ const esClient = new Client({
 
 const knex = Knex({
   client: 'pg',
+  // connection: {
+  //   user: 'tukula',
+  //   database: 'jeffrey',
+  //   host: '127.0.0.1',
+  //   port: 5432,
+  //   max: 10,
+  //   idleTimeoutMillis: 30000
+  // }
   connection: {
     user: 'root',
     database: 'jeffrey-2',
@@ -23,24 +31,72 @@ const knex = Knex({
 });
 
 const main = async () => {
-  const users = await knex
-    .from('users')
-    .where('id', 'd8f2a719-fc90-48d3-82d7-c8b89e65b838');
+  const euCountryCodes = await Promise.map(
+    knex('countries').select('code').where('is_eu', true),
+    (country) => country.code
+  );
+
+  const { rows: users } = await knex.raw(
+    `
+      select
+        users.id,
+        users.first_name,
+        users.last_name,
+        users.is_available,
+        users.is_tester,
+        users.last_activity_at,
+        postal_addresses.country,
+        (
+          select
+            (round(avg(reviews.rank), 2)::FLOAT) as rank
+          from reviews
+          where
+            reviews.mission_id in (
+              select missions.id
+              from missions
+              where
+                missions.id in (
+                  select missions.id
+                  from missions
+                  where missions.provider_id = users.id or missions.client_id = users.id
+                )
+            )
+          and
+            not reviews.author_id = users.id
+        ),
+        (
+          select count('id')
+          from missions
+          where
+            missions.provider_id = users.id
+            and
+            missions.status = 'terminated'
+        ) as total_mission
+      from users
+      left join postal_addresses on users.postal_address_id = postal_addresses.id
+
+      where
+        users.first_name is not null and users.last_name != ''
+      and
+        users.last_name is not null and users.last_name != ''
+      and
+        postal_addresses.country is not null
+      and
+        (NOW()::timestamp - "last_activity_at"::timestamp) < '30 days'
+      and
+        users.is_available = true
+    `
+  );
 
   await Promise.each(users, async (user) => {
     const doc = _.pick(user, [
       'first_name',
       'last_name',
-      'date_of_birth',
-      'profile_picture',
-      'phone_number',
-      'bio',
-      'is_provider',
-      'is_available',
       'is_tester',
-      'created_at',
-      'updated_at',
-      'last_activity_at'
+      'last_activity_at',
+      'country',
+      'rank',
+      'total_mission'
     ]);
 
     doc.categories = await Promise.map(
@@ -51,76 +107,40 @@ const main = async () => {
       (row) => row.service_category_id
     );
 
+    if (doc.categories.length <= 0) {
+      return;
+    }
+
     const locations = await knex('user_locations')
       .where('user_id', user.id)
       .whereRaw('(NOW()::timestamp - "timestamp"::timestamp) < \'10 days\'')
       .orderBy('timestamp', 'desc')
       .limit(1);
 
-    if (locations.length) {
-      doc.location = {
-        lat: locations[0].lat,
-        lon: locations[0].lng
-      };
+    if (locations.length <= 0) {
+      return;
     }
 
-    doc.missions = await Promise.map(
-      knex
-        .select('missions.*', 'service_categories.slug as category')
-        .from('missions')
-        .leftJoin('service_categories', 'service_categories.id', 'missions.service_category_id')
-        .where('provider_id', user.id),
-      async (mission) => {
-        const props = _.pick(mission, [
-          'price',
-          'price_currency',
-          'category',
-          'start_date',
-          'started_date',
-          'ended_date',
-          'status',
-          'created_at',
-          'updated_at',
-          'type'
-        ]);
+    const [ location ] = locations;
 
-        if (!_.isNull(mission.lat) && !_.isNull(mission.lng)) {
-          props.location = {
-            lat: mission.lat,
-            lon: mission.lng
-          };
-        }
+    if (!location.country) {
+      return;
+    }
 
-        if (!_.isNull(mission.provider_lat) && _.isNull(mission.provider_lng)) {
-          props.provider_location = {
-            lat: mission.provider_lat,
-            lon: mission.provider_lng
-          };
-        }
-
-        if (mission.canceled_by) {
-          props.canceled_by = mission.canceled_by === user.id ? 'provider' : 'client';
-        }
-
-        const reviews = await knex
-          .from('reviews')
-          .where({
-            mission_id: mission.id,
-            author_id: mission.client_id
-          });
-
-        if (reviews.length) {
-          props.review = _.pick(reviews[0], [
-            'rank',
-            'message',
-            'created_at',
-            'updated_at'
-          ]);
-        }
-
-        return props;
+    if (euCountryCodes.includes(user.country)) {
+      if (!euCountryCodes.includes(location.country)) {
+        return;
       }
-    );
+    } else {
+      if (location.country !== user.country) {
+        return;
+      }
+    }
+
+    doc.location = {
+      lat: location.lat,
+      lon: location.lng
+    };
 
     console.dir(doc, { depth: 10 });
 
@@ -135,7 +155,6 @@ const main = async () => {
 main().then(
   () => process.exit(0),
   (err) => {
-    console.log(err.name);
     if (err.name === 'ResponseError') {
       console.error(err.meta.body.error);
     } else {

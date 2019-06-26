@@ -4,7 +4,7 @@
 ## Get user referenced in the given category.
 
 ```
-GET /jeffrey-users/_search
+GET /jeffrey-providers/_search
 {
   "query": {
     "bool": {
@@ -14,12 +14,6 @@ GET /jeffrey-users/_search
         },
         {
           "term": { "categories": "50ba30b7-90d4-4855-b305-dad05c39a52b" }
-        },
-        {
-          "term": {  "is_provider": true }
-        },
-        {
-          "term": { "is_available": true }
         },
         {
           "term": { "is_tester": true }
